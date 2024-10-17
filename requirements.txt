@@ -2,7 +2,7 @@ altair==5.4.1
 attrs==24.2.0
 blinker==1.8.2
 cachetools==5.5.0
-camelot-py==0.9.0
+camelot-py[base]
 certifi==2024.8.30
 cffi==1.17.1
 chardet==5.2.0

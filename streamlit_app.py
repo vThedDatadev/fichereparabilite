@@ -62,7 +62,7 @@ def process_pdf_files(files):
     return results
 
 def main():
-    st.title("Traitement des fichiers FREP distant")
+    st.title("Utilitaire d'extraction de l'indice de réparabilité à partir des fiches détaillées")
 
     uploaded_files = st.file_uploader("Choisissez les fichiers FREP", type="pdf", accept_multiple_files=True)
 

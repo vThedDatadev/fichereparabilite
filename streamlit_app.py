@@ -11,23 +11,30 @@ import tempfile
 def extract_ind(file):
     try:
         tables = camelot.read_pdf(file)
-        print(f"tables : {tables}")
-
+        meta_data = None
+        
         if isinstance(tables, camelot.core.TableList):
             table_count = len(tables)
+            meta_table = tables[0].df
+            meta_data = meta_table.to_string().strip()  # Convertir la table meta en string
+            print(f"test meta : {meta_table}")
         elif isinstance(tables, camelot.core.Table):
             table_count = 1
-            tables = [tables]
+            meta_table = tables[0].df
+            meta_data = "Pas d'extraction possible"
+            print(f"meta v2 {meta_data}")
         else:
             raise ValueError("Type de retour inattendu de camelot.read_pdf()")
 
         print(f"Nombre de tables : {table_count}")
 
         selected_table = None
+        selected_table_index = 0
         for i in range(min(3, table_count)):
             current_table = tables[i].df
             if len(current_table) >= 5:
                 selected_table = current_table
+                selected_table_index = i
                 print(f"Table sélectionnée : {i + 1}")
                 break
 
@@ -39,8 +46,13 @@ def extract_ind(file):
         print(f"Colonnes : {col + 1}, Lignes : {line}")
 
         result = selected_table.iloc[-1, col]
-        print(f"Résultat : {result}")
-        return result
+        
+        # Retourner à la fois le résultat et les meta-données
+        return {
+            'resultat': result,
+            'meta': meta_data,
+            'table_index': selected_table_index
+        }
 
     except Exception as e:
         print(f"Une erreur s'est produite : {e}")
@@ -55,14 +67,20 @@ def process_pdf_files(files):
 
         result = extract_ind(tmp_file_path)
         if result is not None:
-            results.append([uploaded_file.name, result])
+            print(f"not none : {result['meta']}")
+            results.append([
+                uploaded_file.name, 
+                result['resultat'],
+                result['meta'],
+                result['table_index']
+            ])
 
         os.unlink(tmp_file_path)  # Delete the temporary file
 
     return results
 
 def main():
-    st.title("Utilitaire d'extraction de l'indice de réparabilité à partir des fiches détaillées")
+    st.title("Traitement des fichiers FREP")
 
     uploaded_files = st.file_uploader("Choisissez les fichiers FREP", type="pdf", accept_multiple_files=True)
 
@@ -73,7 +91,12 @@ def main():
             results = process_pdf_files(uploaded_files)
 
             if results:
-                df = pd.DataFrame(results, columns=['Nom du fichier', 'Résultat'])
+                df = pd.DataFrame(results, columns=[
+                    'Nom du fichier', 
+                    'Résultat',
+                    'meta',
+                    'Index de la table'
+                ])
                 st.write("Résultats extraits:")
                 st.dataframe(df)
 

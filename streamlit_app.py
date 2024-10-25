@@ -16,9 +16,9 @@ def extract_ind(file):
         if isinstance(tables, camelot.core.TableList):
             table_count = len(tables)
             meta_table = tables[0].df
-            meta_data = meta_table.to_string().strip()  # Convertir la table meta en string
+            meta_data = meta_table  # On garde le DataFrame directement
             print(f"test meta : {meta_table}")
-        elif isinstance(tables, camelot.core.Table):
+        elif isinstance(tables, camelot.core.Table):    
             table_count = 1
             meta_table = tables[0].df
             meta_data = "Pas d'extraction possible"

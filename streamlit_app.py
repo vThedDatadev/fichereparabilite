@@ -16,8 +16,19 @@ def extract_ind(file):
         if isinstance(tables, camelot.core.TableList):
             table_count = len(tables)
             meta_table = tables[0].df
-            meta_data = meta_table  # On garde le DataFrame directement
-            print(f"test meta : {meta_table}")
+            
+            # Transformation du DataFrame en texte condensé
+            meta_text = ""
+            for idx, row in meta_table.iterrows():
+                # Joindre les cellules non vides de chaque ligne
+                row_text = ' '.join([str(cell).strip() for cell in row if str(cell).strip() != ''])
+                if row_text:  # Si la ligne n'est pas vide
+                    meta_text += row_text + ' '
+            
+            # Supprimer les espaces multiples et nettoyer le texte
+            meta_data = ' '.join(meta_text.split())
+            print(f"test meta : {meta_data}")
+            
         elif isinstance(tables, camelot.core.Table):    
             table_count = 1
             meta_table = tables[0].df
@@ -47,7 +58,6 @@ def extract_ind(file):
 
         result = selected_table.iloc[-1, col]
         
-        # Retourner à la fois le résultat et les meta-données
         return {
             'resultat': result,
             'meta': meta_data,

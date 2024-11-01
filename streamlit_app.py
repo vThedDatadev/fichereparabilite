@@ -57,6 +57,8 @@ def extract_ind(file):
         print(f"Colonnes : {col + 1}, Lignes : {line}")
 
         result = selected_table.iloc[-1, col]
+        # Remplacer la virgule par un point dans le résultat
+        result = str(result).replace(',', '.')
         
         return {
             'resultat': result,

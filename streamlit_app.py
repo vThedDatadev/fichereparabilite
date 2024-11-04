@@ -7,6 +7,37 @@ from pathlib import Path
 import pandas as pd
 import io
 import tempfile
+from PyPDF2 import PdfReader
+
+def extract_text_around_date_calcul(pdf_path):
+    """Extrait 1 lignes avant et 2 lignes après avoir trouvé 'référence du modèle' dans le PDF entier"""
+    try:
+        reader = PdfReader(pdf_path)
+        for page in reader.pages:
+            text = page.extract_text()
+            lines = text.split('\n')
+            
+            # Chercher la ligne contenant "date de calcul" (insensible à la casse)
+            for i, line in enumerate(lines):
+                if 'rence du' in line.lower():
+                    # Calculer l'index de début (5 lignes avant, mais pas moins que 0)
+                    start_idx = max(0, i - 1)
+                    # Prendre les 5 lignes avant + la ligne courante + 30 lignes après
+                    selected_lines = lines[start_idx:i+2]
+                    return ' | '.join(selected_lines)
+        
+        return "Date de calcul non trouvée dans le PDF"
+    except Exception as e:
+        print(f"Erreur lors de l'extraction du texte : {e}")
+        return "Erreur lors de l'extraction du texte"
+
+def find_date_calcul_index(df):
+    """Trouve l'index de la ligne contenant 'date de calcul' (insensible à la casse)"""
+    for idx, row in df.iterrows():
+        row_text = ' '.join([str(cell).strip().lower() for cell in row if str(cell).strip() != '']).lower()
+        if 'rence du' in row_text:
+            return idx
+    return None
 
 def extract_ind(file):
     try:
@@ -15,25 +46,28 @@ def extract_ind(file):
         
         if isinstance(tables, camelot.core.TableList):
             table_count = len(tables)
-            meta_table = tables[0].df
             
-            # Transformation du DataFrame en texte condensé
-            meta_text = ""
-            for idx, row in meta_table.iterrows():
-                # Joindre les cellules non vides de chaque ligne
-                row_text = ' '.join([str(cell).strip() for cell in row if str(cell).strip() != ''])
-                if row_text:  # Si la ligne n'est pas vide
-                    meta_text += row_text + ' '
-            
-            # Supprimer les espaces multiples et nettoyer le texte
-            meta_data = ' '.join(meta_text.split())
-            print(f"test meta : {meta_data}")
+            # Si une seule table est trouvée
+            if table_count == 1:
+                # Chercher "Date de calcul" dans tout le PDF
+                meta_data = extract_text_around_date_calcul(file)
+                print(f"test meta (single table) : {meta_data}")
+            else:
+                # Comportement original pour plusieurs tables
+                meta_table = tables[0].df
+                meta_text = ""
+                for idx, row in meta_table.iterrows():
+                    row_text = ' '.join([str(cell).strip() for cell in row if str(cell).strip() != ''])
+                    if row_text:
+                        meta_text += row_text + ' '
+                meta_data = ' '.join(meta_text.split())
+                print(f"test meta (multiple tables) : {meta_data}")
             
         elif isinstance(tables, camelot.core.Table):    
             table_count = 1
-            meta_table = tables[0].df
-            meta_data = "Pas d'extraction possible"
-            print(f"meta v2 {meta_data}")
+            # Chercher "Date de calcul" dans tout le PDF
+            meta_data = extract_text_around_date_calcul(file)
+            print(f"meta v2 : {meta_data}")
         else:
             raise ValueError("Type de retour inattendu de camelot.read_pdf()")
 
@@ -42,7 +76,7 @@ def extract_ind(file):
         selected_table = None
         selected_table_index = 0
         for i in range(min(3, table_count)):
-            current_table = tables[i].df
+            current_table = tables[i].df if isinstance(tables, camelot.core.TableList) else tables.df
             if len(current_table) >= 5:
                 selected_table = current_table
                 selected_table_index = i

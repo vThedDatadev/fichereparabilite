@@ -126,9 +126,25 @@ def process_pdf_files(files):
     return results
 
 def main():
-    st.title("Traitement des fichiers FREP")
+    # Configuration de la page
+    st.set_page_config(
+        page_title="Analyse des fiches réparabilités",
+        layout="wide"
+    )
 
-    uploaded_files = st.file_uploader("Choisissez les fichiers FREP", type="pdf", accept_multiple_files=True)
+    # Création d'une disposition en colonnes pour le logo et le titre
+    col1, col2 = st.columns([1, 4])
+    
+    # Ajout du logo dans la première colonne
+    with col1:
+        # Remplacez 'logo.png' par le chemin de votre logo
+        st.image('logo.png', width=150)
+    
+    # Ajout du titre dans la deuxième colonne
+    with col2:
+        st.title("Analyse des fiches réparabilités")
+
+    uploaded_files = st.file_uploader("Sélectionnez l'ensemble des fiches à traiter", type="pdf", accept_multiple_files=True)
 
     if uploaded_files:
         st.write(f"{len(uploaded_files)} fichiers ont été chargés.")
